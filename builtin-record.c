@@ -67,7 +67,7 @@ static bool			no_buildid			=  false;
 static bool			no_buildid_cache		=  false;
 static struct perf_evlist	*evsel_list;
 
-static long			samples				=      0;
+static unsigned long		g_samples			=      0;
 static u64			bytes_written			=      0;
 
 static int			file_new			=      1;
@@ -115,7 +115,7 @@ static void mmap_read(struct perf_mmap *md)
 	if (old == head)
 		return;
 
-	samples++;
+	g_samples++;
 
 	size = head - old;
 
@@ -689,12 +689,12 @@ static int __cmd_record(int argc, const char **argv)
 		close(go_pipe[1]);
 
 	for (;;) {
-		int hits = samples;
+		unsigned long hits = g_samples;
 		int thread;
 
 		mmap_read_all();
 
-		if (hits == samples) {
+		if (hits == g_samples) {
 			if (done)
 				break;
 			err = poll(evsel_list->pollfd, evsel_list->nr_fds, -1);
@@ -722,13 +722,13 @@ static int __cmd_record(int argc, const char **argv)
 	fprintf(stderr, "[ perf record: Woken up %ld times to write data ]\n", waking);
 
 	/*
-	 * Approximate RIP event size: 24 bytes.
+	 * FIXME: sample count is not accurate - could be very low
 	 */
 	fprintf(stderr,
-		"[ perf record: Captured and wrote %.3f MB %s (~%" PRIu64 " samples) ]\n",
+		"[ perf record: Captured and wrote %.3f MB %s (approx. %lu samples) ]\n",
 		(double)bytes_written / 1024.0 / 1024.0,
 		output_name,
-		bytes_written / 24);
+		g_samples);
 
 	return 0;
 
