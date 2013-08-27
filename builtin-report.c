@@ -281,20 +281,6 @@ static int __cmd_report(void)
 	if (ret)
 		goto out_delete;
 
-	nr_samples = 0;
-	list_for_each_entry(pos, &session->evlist->entries, node) {
-		struct hists *hists = &pos->hists;
-
-		hists__collapse_resort(hists);
-		hists__output_resort(hists);
-		nr_samples += hists->stats.nr_events[PERF_RECORD_SAMPLE];
-	}
-
-	if (nr_samples == 0) {
-		ui__warning("The %s file has no samples!\n", input_name);
-		goto out_delete;
-	}
-
 	kernel_map = session->host_machine.vmlinux_maps[MAP__FUNCTION];
 	kernel_kmap = map__kmap(kernel_map);
 	if (kernel_map == NULL ||
@@ -323,6 +309,20 @@ static int __cmd_report(void)
 
 	if (verbose > 2)
 		perf_session__fprintf_dsos(session, stdout);
+
+	nr_samples = 0;
+	list_for_each_entry(pos, &session->evlist->entries, node) {
+		struct hists *hists = &pos->hists;
+
+		hists__collapse_resort(hists);
+		hists__output_resort(hists);
+		nr_samples += hists->stats.nr_events[PERF_RECORD_SAMPLE];
+	}
+
+	if (nr_samples == 0) {
+		ui__warning("The %s file has no samples!\n", input_name);
+		goto out_delete;
+	}
 
 	if (use_browser > 0)
 		perf_evlist__tui_browse_hists(session->evlist, help);
